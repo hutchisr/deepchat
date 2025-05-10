@@ -7,6 +7,7 @@ import {
   ModelConfig,
   ChatMessage
 } from '@shared/presenter'
+import { getPromptStrings } from '@shared/i18n'
 import { ConfigPresenter } from '../configPresenter'
 import { DevicePresenter } from '../devicePresenter'
 import { jsonrepair } from 'jsonrepair'
@@ -207,45 +208,11 @@ export abstract class BaseLLMProvider {
    * @returns 格式化的提示词
    */
   protected getFunctionCallWrapPrompt(tools: MCPToolDefinition[]): string {
-    return `You have the ability to call external tools to assist in solving user problems, the available tool list is defined in the <tool_list> tag, formatted as a JSON array:
-<tool_list>
-${JSON.stringify(tools)}
-</tool_list>\n
-When you determine that calling a tool is the **only or best way to solve the user's problem**, you **must** strictly adhere to the following format in your response. Your response should **only** contain the <function_call> tag and its contents, without any additional text, explanations, or comments.
-
-If multiple tools need to be called consecutively, generate a separate <function_call> tag for each tool, arranged in order.
-
-The format for tool calls is as follows:
-<function_call>
-{
-  "function_call": {
-    "name": "tool_name",
-    "arguments": { // Parameter object, must be valid JSON
-      "parameter1": "value1",
-      "parameter2": "value2"
-      // ... other parameters
-    }
-  }
-}
-</function_call>
-
-**Key Constraints:**
-1.  **Necessity**: Use tools only when you cannot directly answer the user's question and the tool can provide necessary information or perform a required action.
-2.  **Accuracy**: The \`name\` field must **exactly match** one of the tool names provided in <tool_list>. The \`arguments\` field must be a valid JSON object containing **all** required parameters for the tool and their **accurate** values based on the user's request.
-3.  **Format**: If you decide to call a tool, your response **must and can only** contain one or more <function_call> tags, with no prefixes, suffixes, or explanatory text. Outside of function calls, do not include any <function_call> tags to avoid anomalies.
-4.  **Direct Answer**: If you can directly and fully answer the user's question, **do not** use a tool; provide the answer directly.
-5.  **Avoid Guessing**: If you are unsure about information and a suitable tool is available to obtain it, use the tool instead of guessing.
-
-For example, suppose you need to call a tool named "getWeather" with the parameters "location" and "date." Your response should look like this (note that the response contains only the tag):
-<function_call>
-{
-  "function_call": {
-    "name": "getWeather",
-    "arguments": { "location": "Beijing", "date": "2025-03-20" }
-  }
-}
-</function_call>
-`
+    const locale = this.configPresenter.getLanguage?.() || 'zh-CN'
+    return getPromptStrings(locale).functionCallWrapPrompt?.replace(
+      '{{TOOL_LIST}}',
+      JSON.stringify(tools)
+    )
   }
 
   /**
