@@ -207,41 +207,41 @@ export abstract class BaseLLMProvider {
    * @returns 格式化的提示词
    */
   protected getFunctionCallWrapPrompt(tools: MCPToolDefinition[]): string {
-    return `你具备调用外部工具的能力来协助解决用户的问题,可用的工具列表定义在 <tool_list> 标签中，格式为 JSON 数组：
+    return `You have the ability to call external tools to assist in solving user problems, the available tool list is defined in the <tool_list> tag, formatted as a JSON array:
 <tool_list>
 ${JSON.stringify(tools)}
 </tool_list>\n
-当你判断调用工具是**解决用户问题的唯一或最佳方式**时，**必须**严格遵循以下格式进行回复。你的回复中**仅**包含 <function_call> 标签及其内容，不要包含任何其他文字、解释或评论。
+When you determine that calling a tool is the **only or best way to solve the user's problem**, you **must** strictly adhere to the following format in your response. Your response should **only** contain the <function_call> tag and its contents, without any additional text, explanations, or comments.
 
-如果需要连续调用多个工具，请为每个工具生成一个独立的 <function_call> 标签，按顺序排列。
+If multiple tools need to be called consecutively, generate a separate <function_call> tag for each tool, arranged in order.
 
-工具调用的格式如下：
+The format for tool calls is as follows:
 <function_call>
 {
   "function_call": {
-    "name": "工具名称",
-    "arguments": { // 参数对象，必须是有效的 JSON 格式
-      "参数1": "值1",
-      "参数2": "值2"
-      // ... 其他参数
+    "name": "tool_name",
+    "arguments": { // Parameter object, must be valid JSON
+      "parameter1": "value1",
+      "parameter2": "value2"
+      // ... other parameters
     }
   }
 }
 </function_call>
 
-**重要约束:**
-1.  **必要性**: 仅在无法直接回答用户问题，且工具能提供必要信息或执行必要操作时才使用工具。
-2.  **准确性**: \`name\` 字段必须**精确匹配** <tool_list> 中提供的某个工具的名称。\`arguments\` 字段必须是一个有效的 JSON 对象，包含该工具所需的**所有**参数及其基于用户请求的**准确**值。
-3.  **格式**: 如果决定调用工具，你的回复**必须且只能**包含一个或多个 <function_call> 标签，不允许任何前缀、后缀或解释性文本。而在函数调用之外的内容中不要包含任何 <function_call> 标签，以防异常。
-4.  **直接回答**: 如果你可以直接、完整地回答用户的问题，请**不要**使用工具，直接生成回答内容。
-5.  **避免猜测**: 如果不确定信息，且有合适的工具可以获取该信息，请使用工具而不是猜测。
+**Key Constraints:**
+1.  **Necessity**: Use tools only when you cannot directly answer the user's question and the tool can provide necessary information or perform a required action.
+2.  **Accuracy**: The \`name\` field must **exactly match** one of the tool names provided in <tool_list>. The \`arguments\` field must be a valid JSON object containing **all** required parameters for the tool and their **accurate** values based on the user's request.
+3.  **Format**: If you decide to call a tool, your response **must and can only** contain one or more <function_call> tags, with no prefixes, suffixes, or explanatory text. Outside of function calls, do not include any <function_call> tags to avoid anomalies.
+4.  **Direct Answer**: If you can directly and fully answer the user's question, **do not** use a tool; provide the answer directly.
+5.  **Avoid Guessing**: If you are unsure about information and a suitable tool is available to obtain it, use the tool instead of guessing.
 
-例如，假设你需要调用名为 "getWeather" 的工具，并提供 "location" 和 "date" 参数，你应该这样回复（注意，回复中只有标签）：
+For example, suppose you need to call a tool named "getWeather" with the parameters "location" and "date." Your response should look like this (note that the response contains only the tag):
 <function_call>
 {
   "function_call": {
     "name": "getWeather",
-    "arguments": { "location": "北京", "date": "2025-03-20" }
+    "arguments": { "location": "Beijing", "date": "2025-03-20" }
   }
 }
 </function_call>
